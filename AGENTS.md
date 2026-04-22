@@ -50,8 +50,9 @@ Configured in `next.config.ts` rewrites:
 
 - **Tailwind v4**: CSS-first configuration in `app/globals.css` (`@import "tailwindcss"`, `@theme inline`). No `tailwind.config.js`.
 - **Path alias**: `@/*` maps to `./*` in both TypeScript and Jest.
-- **Mapbox GL import**: use `react-map-gl/mapbox` (not `react-map-gl`). Geocoder has no types; use `// @ts-expect-error` or `types/mapbox-gl-geocoder.d.ts`.
-- **Jest mocks** (`jest.setup.ts`): `mapbox-gl`, `@mapbox/mapbox-gl-geocoder`, and `@/app/components/AlertProvider` are auto-mocked. Unit tests rely on these mocks.
+- **Mapbox GL import**: use `react-map-gl/mapbox` (not `react-map-gl`). Geocoder has no types; use `// @ts-expect-error`.
+- **Jest mocks** (`jest.setup.ts`): `mapbox-gl`, `@mapbox/mapbox-gl-geocoder`, `@/app/components/AlertProvider`, and `@/app/lib/logger` are auto-mocked. Unit tests rely on these mocks.
+- **E2E env**: Playwright tests require `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` to be set (E2E workflow sets it from secrets).
 - **Playwright**: config in `e2e/playwright.config.ts`. Runs `npm run dev` automatically. Uses `--use-gl=swiftshader`. Tests are in `e2e/tests/*.spec.ts`. Fixtures in `e2e/fixtures/`.
 
 ## CI/CD
