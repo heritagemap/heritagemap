@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import AlertProvider from '@/app/components/AlertProvider';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: 'HeritageMap',
@@ -40,6 +41,7 @@ export default function RootLayout({
     <html lang="ru">
       <body className="min-h-full flex flex-col">
         <AlertProvider>{children}</AlertProvider>
+        <Analytics />
       </body>
     </html>
   );
