@@ -10,7 +10,7 @@ test.describe('Map Mobile Tests (Mocked API)', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 851 });
 
-    await page.route('**/_api/heritage*', async (route) => {
+    await page.route(/\/_api\/heritage(?:\/|\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

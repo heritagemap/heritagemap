@@ -17,7 +17,7 @@ async function mockHeritageInfo(page: Page) {
 }
 
 async function mockHeritage(page: Page, body?: object) {
-  await page.route('**/_api/heritage**', async (route: Route) => {
+  await page.route(/\/_api\/heritage(?:\/|\?|$)/, async (route: Route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
