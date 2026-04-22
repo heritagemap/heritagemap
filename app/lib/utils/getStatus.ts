@@ -1,0 +1,35 @@
+import { Type } from '@/app/lib/interfaces/FullInfo';
+
+const TYPE_OF_MONUMENT = {
+  architecture1: 'Памятник архитектуры',
+  history1: 'Памятник истории',
+  archeology1: 'Памятник археологии',
+  monument1: 'Памятник монументального искусства',
+  settlement1: 'Историческое поселение',
+  architecture0:
+    'Обладает признаками памятника архитектуры, не охраняется государством',
+  history0: 'Обладает признаками памятника истории, не охраняется государством',
+  archeology0:
+    'Обладает признаками памятника археологии, не охраняется государством',
+  monument0:
+    'Обладает признаками памятника монументального искусства, не охраняется государством',
+  settlement0:
+    'Обладает признаками исторического поселения, не охраняется государством',
+};
+
+const IS_OFFICIAL: Record<string, string> = {
+  0: '1',
+  1: '1',
+  2: '1',
+  3: '1',
+  4: '0',
+};
+
+const getStatus = (type: Type, knid?: string): string => {
+  if (!knid || !knid[2]) return '';
+
+  const key = `${Type[type]}${IS_OFFICIAL[knid[2]]}`;
+  return TYPE_OF_MONUMENT[key as keyof typeof TYPE_OF_MONUMENT] || '';
+};
+
+export default getStatus;

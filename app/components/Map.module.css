@@ -1,0 +1,19 @@
+.cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: #fff;
+  background: #6c2c04;
+  border-radius: 20px;
+  border: none;
+  text-align: center;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.cluster:hover {
+  background: #532203;
+}

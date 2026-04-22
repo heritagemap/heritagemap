@@ -1,0 +1,14 @@
+{
+  "id": "test-1",
+  "name": "Тестовый собор",
+  "knid": "123",
+  "type": 0,
+  "year": "1500",
+  "description": "Описание тестового собора",
+  "author": "Автор",
+  "address": "Красная площадь, 1",
+  "image": "Test_Cathedral.jpg",
+  "wiki": "Test_Cathedral",
+  "lat": 55.7522,
+  "long": 37.6155
+}

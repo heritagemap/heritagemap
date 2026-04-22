@@ -1,0 +1,9 @@
+export { default as Destroyed } from './Destroyed';
+export { default as Close } from './Close';
+export { default as Status } from './Status';
+export { default as Address } from './Address';
+export { default as Wiki } from './Wiki';
+export { default as Sobory } from './Sobory';
+export { default as LinkIcon } from './Link';
+export { default as ExtraLink } from './ExtraLink';
+export { default as Templates } from './Templates';
