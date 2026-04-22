@@ -38,7 +38,7 @@ test.describe('Map Mobile Tests (Mocked API)', () => {
     await expect(sidebar).toBeVisible();
 
     // Check sidebar width is full viewport on mobile
-    const sidebarWidth = await sidebar.evaluate((el) => el.offsetWidth);
+    const sidebarWidth = await sidebar.evaluate((el) => (el as HTMLElement).offsetWidth);
     const viewportWidth = await page.evaluate(() => window.innerWidth);
     expect(sidebarWidth).toBeLessThanOrEqual(viewportWidth);
     expect(sidebarWidth).toBeGreaterThan(300);
@@ -54,7 +54,7 @@ test.describe('Map Mobile Tests (Mocked API)', () => {
     await expect(sidebar).toBeVisible();
 
     // Verify sidebar spans most of viewport height
-    const sidebarHeight = await sidebar.evaluate((el) => el.offsetHeight);
+    const sidebarHeight = await sidebar.evaluate((el) => (el as HTMLElement).offsetHeight);
     const viewportHeight = await page.evaluate(() => window.innerHeight);
     expect(sidebarHeight).toBeGreaterThanOrEqual(viewportHeight * 0.9);
   });

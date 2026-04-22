@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page, Route } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -6,8 +6,8 @@ const fixturesDir = path.join(__dirname, '../fixtures');
 const monumentsFixture = JSON.parse(fs.readFileSync(path.join(fixturesDir, 'monuments.json'), 'utf-8'));
 const monumentInfoFixture = JSON.parse(fs.readFileSync(path.join(fixturesDir, 'monument-info.json'), 'utf-8'));
 
-async function mockHeritageInfo(page: any) {
-  await page.route('**/_api/heritage_info**', async (route: any) => {
+async function mockHeritageInfo(page: Page) {
+  await page.route('**/_api/heritage_info**', async (route: Route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -16,8 +16,8 @@ async function mockHeritageInfo(page: any) {
   });
 }
 
-async function mockHeritage(page: any, body?: object) {
-  await page.route('**/_api/heritage**', async (route: any) => {
+async function mockHeritage(page: Page, body?: object) {
+  await page.route('**/_api/heritage**', async (route: Route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
