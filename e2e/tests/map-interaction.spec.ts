@@ -85,11 +85,9 @@ test.describe('Map Interaction Tests (Mocked API)', () => {
 
     const clusteredMonuments = {
       monuments: [
-        [
-          { id: 'c1', name: 'Cluster A', lat: 55.7522, lon: 37.6155 },
-          { id: 'c2', name: 'Cluster B', lat: 55.7522, lon: 37.6155 },
-          { id: 'c3', name: 'Cluster C', lat: 55.7522, lon: 37.6155 },
-        ],
+        { id: 'c1', name: 'Cluster A', lat: 55.7522, lon: 37.6155 },
+        { id: 'c2', name: 'Cluster B', lat: 55.7522, lon: 37.6155 },
+        { id: 'c3', name: 'Cluster C', lat: 55.7522, lon: 37.6155 },
       ],
     };
     await mockHeritage(page, clusteredMonuments);

@@ -130,16 +130,12 @@ export default function Map() {
 
       try {
         const response = await fetch(
-          PAGES_RESOURCE + bbox.map((item) => String(item).substr(0, 7)).join(''),
+          PAGES_RESOURCE + bbox.map((item) => String(item).substr(0, 7)).join(),
           { signal: abortControllerRef.current.signal },
         );
 
         const { monuments } = await response.json();
-        const flatMonuments = (monuments || []).reduce(
-          (acc: MonumentInterface[], group: MonumentInterface[]) => acc.concat(group),
-          [],
-        );
-        setMonuments(flatMonuments);
+        setMonuments(monuments || []);
 
         if (!monuments || monuments.length === 0) {
           alert.show('Достопримечательности не найдены');
