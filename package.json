@@ -8,10 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui",
-    "e2e:smoke": "playwright test map-smoke",
-    "e2e:interaction": "playwright test map-interaction"
+    "e2e": "playwright test --config e2e/playwright.config.ts",
+    "e2e:ui": "playwright test --config e2e/playwright.config.ts --ui",
+    "e2e:smoke": "playwright test --config e2e/playwright.config.ts map-smoke",
+    "e2e:interaction": "playwright test --config e2e/playwright.config.ts map-interaction"
   },
   "dependencies": {
     "@mapbox/mapbox-gl-geocoder": "^5.1.2",
