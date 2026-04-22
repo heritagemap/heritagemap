@@ -4,7 +4,7 @@ import AlertProvider from '@/app/components/AlertProvider';
 import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
-  title: 'HeritageMap',
+  title: { default: 'HeritageMap', template: '%s | HeritageMap' },
   description: 'Интерактивная карта объектов культурного наследия России',
   icons: {
     icon: [

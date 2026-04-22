@@ -44,24 +44,35 @@ export default function FullInfo({ image }: FullInfoProps) {
   const [file, setFile] = useState<FileInterface | undefined>(undefined);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchImage = async () => {
       setLoading(true);
       setLicenses('');
       setFile(undefined);
 
       try {
-        const response = await fetch(IMAGE_RESOURCE + image);
+        const response = await fetch(IMAGE_RESOURCE + image, {
+          signal: abortController.signal,
+        });
         const text = await response.text();
         const info = parseImageXml(text);
 
         setLicenses(info.licenses);
         setFile(info.file);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.log(err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchImage();
+
+    return () => {
+      abortController.abort();
+    };
   }, [image]);
 
   return (
@@ -75,7 +86,6 @@ export default function FullInfo({ image }: FullInfoProps) {
             alt={file.name || 'description'}
             width={320}
             height={240}
-            unoptimized
           />
 
           <div className="text-xs text-[#aaa] mt-2 space-x-1">

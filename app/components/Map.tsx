@@ -84,17 +84,6 @@ export default function Map() {
   const mapRef = useRef<MapRef>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    const numLat = Number(lat);
-    const numLon = Number(lon);
-    setViewState({ longitude: numLon, latitude: numLat, zoom });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -130,7 +119,7 @@ export default function Map() {
 
       try {
         const response = await fetch(
-          PAGES_RESOURCE + bbox.map((item) => String(item).substr(0, 7)).join(),
+          PAGES_RESOURCE + bbox.map((item) => String(item).slice(0, 7)).join(),
           { signal: abortControllerRef.current.signal },
         );
 

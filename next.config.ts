@@ -2,6 +2,18 @@ import type { NextConfig } from 'next';
 import shortLinks from './app/lib/constants/shortLinks';
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.toolforge.org',
+      },
+    ],
+  },
   async redirects() {
     const linkRedirects = shortLinks.map((link) => ({
       source: link.path,

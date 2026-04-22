@@ -41,12 +41,18 @@ export default function Sidebar() {
   };
 
   useEffect(() => {
+    if (!id) return;
+
+    const abortController = new AbortController();
+
     const fetchInfo = async () => {
       setLoading(true);
       setInfo(undefined);
 
       try {
-        const response = await fetch(`${RESOURCE}?id=${id}`);
+        const response = await fetch(`${RESOURCE}?id=${id}`, {
+          signal: abortController.signal,
+        });
         const text = await response.text();
         const infoJSON: InfoInterface = JSON.parse(text);
 
@@ -59,13 +65,18 @@ export default function Sidebar() {
           }),
         );
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
         console.log(err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) fetchInfo();
+    fetchInfo();
+
+    return () => {
+      abortController.abort();
+    };
   }, [id]);
 
   if (!id) return null;
