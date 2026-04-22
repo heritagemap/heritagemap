@@ -43,7 +43,7 @@
     "supercluster": "^8.0.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.9",
-    "typescript": "^5"
+    "typescript": "^6"
   },
   "engines": {
     "node": ">=24"
