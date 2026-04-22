@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
+import { getLogger } from '@/app/lib/logger';
+
+const logger = getLogger('GlobalErrorBoundary');
 
 export default function GlobalError({
   error,
@@ -10,7 +13,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    logger.error({ err: error, digest: error.digest }, 'Критическая ошибка');
   }, [error]);
 
   return (

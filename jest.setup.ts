@@ -20,3 +20,12 @@ jest.mock('@mapbox/mapbox-gl-geocoder', () =>
 jest.mock('@/app/components/AlertProvider', () => ({
   useAlert: () => ({ show: jest.fn(), error: jest.fn(), info: jest.fn() }),
 }));
+
+jest.mock('@/app/lib/logger', () => ({
+  getLogger: () => ({
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  }),
+}));

@@ -9,6 +9,7 @@ import getSource, { SOURCE } from '@/app/lib/utils/getSource';
 import getRoute from '@/app/lib/utils/getRoute';
 import getProtection from '@/app/lib/utils/getProtegtion';
 import { RESOURCE } from '@/app/lib/constants/map';
+import { getLogger } from '@/app/lib/logger';
 
 import FullInfo from './FullInfo';
 import {
@@ -22,6 +23,8 @@ import {
   ExtraLink,
   Templates,
 } from '@/app/components/icons';
+
+const logger = getLogger('Sidebar');
 
 export default function Sidebar() {
   const [loading, setLoading] = useState(false);
@@ -50,11 +53,20 @@ export default function Sidebar() {
       setInfo(undefined);
 
       try {
+        logger.debug({ id }, 'Загрузка info');
+
         const response = await fetch(`${RESOURCE}?id=${id}`, {
           signal: abortController.signal,
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
         const text = await response.text();
         const infoJSON: InfoInterface = JSON.parse(text);
+
+        logger.info({ id, name: infoJSON.name }, 'Info загружено');
 
         setInfo(infoJSON);
         setSource(
@@ -66,7 +78,8 @@ export default function Sidebar() {
         );
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
-        console.log(err);
+        const error = err instanceof Error ? err : new Error(String(err));
+        logger.error({ id, err: error }, 'Ошибка загрузки info');
       } finally {
         setLoading(false);
       }

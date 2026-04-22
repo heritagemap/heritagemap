@@ -16,7 +16,10 @@ import getRoute from '@/app/lib/utils/getRoute';
 import MonumentInterface from '@/app/lib/interfaces/Monument';
 import MarkerButton from './MarkerButton';
 import { useAlert } from './AlertProvider';
+import { getLogger } from '@/app/lib/logger';
 import styles from './Map.module.css';
+
+const logger = getLogger('Map');
 
 interface ViewState {
   longitude: number;
@@ -118,22 +121,32 @@ export default function Map() {
       });
 
       try {
+        logger.debug({ latitude, longitude, zoom, bbox }, 'Загрузка точек');
+
         const response = await fetch(
           PAGES_RESOURCE + bbox.map((item) => String(item).slice(0, 7)).join(),
           { signal: abortControllerRef.current.signal },
         );
 
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
         const { monuments } = await response.json();
         setMonuments(monuments || []);
 
+        logger.info({ count: monuments?.length || 0 }, 'Точки загружены');
+
         if (!monuments || monuments.length === 0) {
+          logger.warn('Достопримечательности не найдены');
           alert.show('Достопримечательности не найдены');
         }
       } catch (err: unknown) {
         if (err instanceof Error && err.name === 'AbortError') return;
 
         alert.error('Что-то пошло не так');
-        console.log(err);
+        const error = err instanceof Error ? err : new Error(String(err));
+        logger.error({ err: error }, 'Ошибка загрузки точек');
       } finally {
         setLoading(false);
       }
@@ -167,6 +180,7 @@ export default function Map() {
       const { longitude, latitude } = evt.coords;
       const currentZoom = viewState.zoom || MIN_ZOOM_LEVEL;
 
+      logger.info({ lat: latitude, lon: longitude }, 'Геолокация получена');
       loadPointsWithDebounce({ latitude, longitude, zoom: currentZoom });
       router.replace(getRoute({ lat: latitude, lon: longitude, id, zoom: currentZoom }));
     },
@@ -174,6 +188,7 @@ export default function Map() {
   );
 
   const handleMapLoad = useCallback(() => {
+    logger.info('Карта загружена');
     loadPoints({ longitude: lon, latitude: lat, zoom: viewState.zoom || MIN_ZOOM_LEVEL });
   }, [lon, lat, viewState.zoom, loadPoints]);
 
@@ -211,6 +226,7 @@ export default function Map() {
   const handleClusterClick = useCallback(
     (clusterId: number, longitude: number, latitude: number) => {
       const expansionZoom = supercluster.getClusterExpansionZoom(clusterId);
+      logger.debug({ clusterId, expansionZoom }, 'Клик по кластеру');
       setViewState({ longitude, latitude, zoom: expansionZoom });
       router.replace(getRoute({ lat: latitude, lon: longitude, zoom: expansionZoom, id }));
     },
@@ -221,6 +237,7 @@ export default function Map() {
     (result: unknown) => {
       const [newLon, newLat] = (result as { center: [number, number] }).center;
       const maxZoom = Math.max(MIN_ZOOM_LEVEL, 12);
+      logger.info({ lat: newLat, lon: newLon }, 'Результат геокодера');
       setViewState({ longitude: newLon, latitude: newLat, zoom: maxZoom });
       router.replace(getRoute({ lat: newLat, lon: newLon, zoom: maxZoom, id }));
       loadPointsWithDebounce({ latitude: newLat, longitude: newLon, zoom: maxZoom });

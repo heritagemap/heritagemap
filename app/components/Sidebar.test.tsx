@@ -30,6 +30,7 @@ describe('Sidebar', () => {
   test('fetches and renders monument info', async () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
+        ok: true,
         text: () =>
           Promise.resolve(
             JSON.stringify({
@@ -63,6 +64,7 @@ describe('Sidebar', () => {
   test('close button replaces route without id', async () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
+        ok: true,
         text: () => Promise.resolve(JSON.stringify({ name: 'Test' })),
       } as Response),
     );
