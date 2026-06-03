@@ -10,7 +10,7 @@ export default async function MapPage({ params }: MapPageProps) {
 
   return (
     <>
-      <Map />
+      <Map key="map-root" />
       {slug?.[0] && <Sidebar />}
     </>
   );
