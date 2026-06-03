@@ -121,7 +121,7 @@ describe('Map', () => {
     });
   });
 
-  test('updates URL on move end via router.replace', async () => {
+  test('updates URL on move via router.replace', async () => {
     render(<Map />);
 
     act(() => {
@@ -130,17 +130,6 @@ describe('Map', () => {
           viewState: { longitude: 37.6, latitude: 55.7, zoom: 12 },
         });
       }
-    });
-    act(() => {
-      if (typeof lastMapProps.onMoveEnd === 'function') {
-        (lastMapProps.onMoveEnd as (evt: { viewState: { longitude: number; latitude: number; zoom: number } }) => void)({
-          viewState: { longitude: 37.6, latitude: 55.7, zoom: 12 },
-        });
-      }
-    });
-
-    act(() => {
-      jest.advanceTimersByTime(500);
     });
 
     await waitFor(() => {

@@ -1,23 +1,26 @@
 'use client';
 
-import { memo } from 'react';
-import { useRouter } from 'next/navigation';
-
 import MonumentInterface from '@/app/lib/interfaces/Monument';
 import getRoute from '@/app/lib/utils/getRoute';
 import Point from '@/app/components/icons/Point';
+import { useRouter, useParams } from 'next/navigation';
 
 interface MarkerButtonProps {
   item: MonumentInterface;
-  isActive: boolean;
-  currentZoom: number;
 }
 
-function MarkerButton({ item, isActive, currentZoom }: MarkerButtonProps) {
+export default function MarkerButton({ item }: MarkerButtonProps) {
+  const params = useParams();
   const router = useRouter();
 
+  const id = params.slug?.[0] || params.id;
+  const isActive = id === item.id;
+  const lat = params.lat as string;
+  const lon = params.lon as string;
+  const zoom = params.zoom as string;
+
   const handleMarkerClick = () => {
-    router.replace(getRoute({ lat: item.lat, lon: item.lon, zoom: currentZoom, id: item.id }));
+    router.replace(getRoute({ lat, lon, zoom, id: item.id }));
   };
 
   return (
@@ -31,5 +34,3 @@ function MarkerButton({ item, isActive, currentZoom }: MarkerButtonProps) {
     </button>
   );
 }
-
-export default memo(MarkerButton);

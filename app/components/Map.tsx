@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Map as MapGL, Marker, NavigationControl, GeolocateControl, useControl } from 'react-map-gl/mapbox';
-import type { MapRef } from 'react-map-gl/mapbox';
 // @ts-expect-error — no type declarations available for @mapbox/mapbox-gl-geocoder
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import Supercluster from 'supercluster';
+import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 
@@ -76,27 +76,23 @@ export default function Map() {
   const zoom = Number(params.zoom) || MIN_ZOOM_LEVEL;
   const id = params.slug?.[0] as string | undefined;
 
-  const [monuments, setMonuments] = useState<MonumentInterface[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [initialViewState] = useState<ViewState>({
+  const [viewState, setViewState] = useState<ViewState>({
     longitude: lon,
     latitude: lat,
     zoom,
   });
-
-  const viewStateRef = useRef<ViewState>({ longitude: lon, latitude: lat, zoom });
-  const [settledViewState, setSettledViewState] = useState<ViewState>({ longitude: lon, latitude: lat, zoom });
+  const [monuments, setMonuments] = useState<MonumentInterface[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const mapRef = useRef<MapRef>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const moveEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('viewport', JSON.stringify(settledViewState));
+      localStorage.setItem('viewport', JSON.stringify(viewState));
     }
-  }, [settledViewState]);
+  }, [viewState]);
 
   const loadPoints = useCallback(
     async ({
@@ -166,54 +162,35 @@ export default function Map() {
     [loadPoints],
   );
 
-  const syncUrl = useCallback(
-    ({ latitude, longitude, zoom }: { latitude: number; longitude: number; zoom: number }) => {
-      router.replace(getRoute({ lat: latitude, lon: longitude, zoom, id }));
-    },
-    [id, router],
-  );
-
   const handleMove = useCallback(
     (evt: { viewState: ViewState }) => {
       const { longitude, latitude, zoom } = evt.viewState;
       const maxZoom = Math.max(MIN_ZOOM_LEVEL, Number(zoom));
-      viewStateRef.current = { longitude, latitude, zoom: maxZoom };
+
+      setViewState({ longitude, latitude, zoom: maxZoom });
       loadPointsWithDebounce({ latitude, longitude, zoom: maxZoom });
-    },
-    [loadPointsWithDebounce],
-  );
 
-  const handleMoveEnd = useCallback(
-    (evt: { viewState: ViewState }) => {
-      const { longitude, latitude, zoom } = evt.viewState;
-      const maxZoom = Math.max(MIN_ZOOM_LEVEL, Number(zoom));
-
-      if (moveEndTimerRef.current) clearTimeout(moveEndTimerRef.current);
-      moveEndTimerRef.current = setTimeout(() => {
-        setSettledViewState({ longitude, latitude, zoom: maxZoom });
-        syncUrl({ latitude, longitude, zoom: maxZoom });
-      }, 400);
+      router.replace(getRoute({ lat: latitude, lon: longitude, zoom: maxZoom, id }));
     },
-    [syncUrl],
+    [id, router, loadPointsWithDebounce],
   );
 
   const handleGeolocate = useCallback(
     (evt: { coords: { latitude: number; longitude: number } }) => {
       const { longitude, latitude } = evt.coords;
-      const currentZoom = viewStateRef.current.zoom || MIN_ZOOM_LEVEL;
+      const currentZoom = viewState.zoom || MIN_ZOOM_LEVEL;
 
       logger.info({ lat: latitude, lon: longitude }, 'Геолокация получена');
-      mapRef.current?.flyTo({ center: [longitude, latitude], zoom: currentZoom, duration: 500 });
       loadPointsWithDebounce({ latitude, longitude, zoom: currentZoom });
       router.replace(getRoute({ lat: latitude, lon: longitude, id, zoom: currentZoom }));
     },
-    [id, router, loadPointsWithDebounce],
+    [viewState.zoom, id, router, loadPointsWithDebounce],
   );
 
   const handleMapLoad = useCallback(() => {
     logger.info('Карта загружена');
-    loadPoints({ longitude: lon, latitude: lat, zoom: viewStateRef.current.zoom || MIN_ZOOM_LEVEL });
-  }, [lon, lat, loadPoints]);
+    loadPoints({ longitude: lon, latitude: lat, zoom: viewState.zoom || MIN_ZOOM_LEVEL });
+  }, [lon, lat, viewState.zoom, loadPoints]);
 
   const supercluster = useMemo(() => {
     const sc = new Supercluster({
@@ -236,25 +213,24 @@ export default function Map() {
     const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
     const height = typeof window !== 'undefined' ? window.innerHeight : 768;
     const bbox = getBbox({
-      latitude: settledViewState.latitude,
-      longitude: settledViewState.longitude,
-      zoom: settledViewState.zoom,
+      latitude: viewState.latitude,
+      longitude: viewState.longitude,
+      zoom: viewState.zoom,
       width,
       height,
     });
 
-    return supercluster.getClusters(bbox as [number, number, number, number], Math.floor(settledViewState.zoom)) as ClusterFeature[];
-  }, [supercluster, settledViewState]);
+    return supercluster.getClusters(bbox as [number, number, number, number], Math.floor(viewState.zoom)) as ClusterFeature[];
+  }, [supercluster, viewState]);
 
   const handleClusterClick = useCallback(
     (clusterId: number, longitude: number, latitude: number) => {
       const expansionZoom = supercluster.getClusterExpansionZoom(clusterId);
       logger.debug({ clusterId, expansionZoom }, 'Клик по кластеру');
-      mapRef.current?.flyTo({ center: [longitude, latitude], zoom: expansionZoom, duration: 500 });
-      setSettledViewState({ longitude, latitude, zoom: expansionZoom });
-      syncUrl({ latitude, longitude, zoom: expansionZoom });
+      setViewState({ longitude, latitude, zoom: expansionZoom });
+      router.replace(getRoute({ lat: latitude, lon: longitude, zoom: expansionZoom, id }));
     },
-    [supercluster, syncUrl],
+    [supercluster, id, router],
   );
 
   const handleGeocoderResult = useCallback(
@@ -262,12 +238,11 @@ export default function Map() {
       const [newLon, newLat] = (result as { center: [number, number] }).center;
       const maxZoom = Math.max(MIN_ZOOM_LEVEL, 12);
       logger.info({ lat: newLat, lon: newLon }, 'Результат геокодера');
-      mapRef.current?.flyTo({ center: [newLon, newLat], zoom: maxZoom, duration: 500 });
-      setSettledViewState({ longitude: newLon, latitude: newLat, zoom: maxZoom });
-      syncUrl({ latitude: newLat, longitude: newLon, zoom: maxZoom });
+      setViewState({ longitude: newLon, latitude: newLat, zoom: maxZoom });
+      router.replace(getRoute({ lat: newLat, lon: newLon, zoom: maxZoom, id }));
       loadPointsWithDebounce({ latitude: newLat, longitude: newLon, zoom: maxZoom });
     },
-    [syncUrl, loadPointsWithDebounce],
+    [id, router, loadPointsWithDebounce],
   );
 
   const markers = useMemo(() => {
@@ -308,31 +283,29 @@ export default function Map() {
           longitude={longitude}
           latitude={latitude}
         >
-          <MarkerButton item={monument} isActive={id === feature.properties.id} currentZoom={settledViewState.zoom} />
+          <MarkerButton item={monument} />
         </Marker>
       );
     });
-  }, [clusters, monuments, handleClusterClick, id, settledViewState.zoom]);
+  }, [clusters, monuments, handleClusterClick]);
 
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) abortControllerRef.current.abort();
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      if (moveEndTimerRef.current) clearTimeout(moveEndTimerRef.current);
     };
   }, []);
 
   return (
     <MapGL
       ref={mapRef}
-      {...initialViewState}
+      {...viewState}
       dragRotate={false}
       pitch={0}
       pitchWithRotate={false}
       style={{ width: '100vw', height: '100vh' }}
       mapStyle="mapbox://styles/mapbox/streets-v9"
       onMove={handleMove}
-      onMoveEnd={handleMoveEnd}
       onLoad={handleMapLoad}
       mapboxAccessToken={ACCESS_TOKEN}
     >
