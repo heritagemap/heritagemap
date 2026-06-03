@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 
 import { InfoInterface } from '@/app/lib/interfaces/FullInfo';
 import getStatus from '@/app/lib/utils/getStatus';
 import getSource, { SOURCE } from '@/app/lib/utils/getSource';
-import getRoute from '@/app/lib/utils/getRoute';
 import getProtection from '@/app/lib/utils/getProtegtion';
 import { RESOURCE } from '@/app/lib/constants/map';
 import { getLogger } from '@/app/lib/logger';
@@ -26,26 +24,17 @@ import {
 
 const logger = getLogger('Sidebar');
 
-export default function Sidebar() {
+interface SidebarProps {
+  id: string;
+  onClose: () => void;
+}
+
+export default function Sidebar({ id, onClose }: SidebarProps) {
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<InfoInterface | undefined>(undefined);
   const [source, setSource] = useState<string>(SOURCE);
 
-  const params = useParams();
-  const router = useRouter();
-
-  const id = params.slug?.[0];
-  const lat = params.lat as string;
-  const lon = params.lon as string;
-  const zoom = params.zoom as string;
-
-  const handleClose = () => {
-    router.replace(getRoute({ lat, lon, zoom }));
-  };
-
   useEffect(() => {
-    if (!id) return;
-
     const abortController = new AbortController();
 
     const fetchInfo = async () => {
@@ -92,8 +81,6 @@ export default function Sidebar() {
     };
   }, [id]);
 
-  if (!id) return null;
-
   const status = info ? getStatus(info.type, info.knid) : '';
   const protection = info?.protection ? getProtection(info.protection) : '';
 
@@ -106,7 +93,7 @@ export default function Sidebar() {
 
         <button
           type="button"
-          onClick={handleClose}
+          onClick={onClose}
           className="absolute top-1 right-1 w-12 h-12 bg-transparent border-0 cursor-pointer opacity-80 hover:opacity-100"
         >
           <Close />

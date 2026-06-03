@@ -21,12 +21,13 @@ jest.mock('react-map-gl/mapbox', () => ({
   useControl: jest.fn(() => null),
 }));
 
+const mockGetClusters = jest.fn(() => []);
 const mockGetClusterExpansionZoom = jest.fn(() => 15);
 
 jest.mock('supercluster', () => {
   return jest.fn().mockImplementation(() => ({
     load: jest.fn(),
-    getClusters: jest.fn(() => []),
+    getClusters: mockGetClusters,
     getClusterExpansionZoom: mockGetClusterExpansionZoom,
   }));
 });
@@ -121,7 +122,7 @@ describe('Map', () => {
     });
   });
 
-  test('updates URL on move via router.replace', async () => {
+  test('does NOT call router.replace on move', () => {
     render(<Map />);
 
     act(() => {
@@ -132,11 +133,97 @@ describe('Map', () => {
       }
     });
 
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalled();
-    });
-
-    expect(mockReplace).toHaveBeenCalledWith('/lat/55.7/lon/37.6/zoom/12');
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
+  test('updates browser history on move end without router navigation', () => {
+    jest.useFakeTimers();
+
+    const replaceStateSpy = jest.spyOn(window.history, 'replaceState');
+
+    render(<Map />);
+
+    act(() => {
+      if (typeof lastMapProps.onMoveEnd === 'function') {
+        (lastMapProps.onMoveEnd as (evt: { viewState: { longitude: number; latitude: number; zoom: number } }) => void)({
+          viewState: { longitude: 37.6, latitude: 55.7, zoom: 12 },
+        });
+      }
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/lat/55.7/lon/37.6/zoom/12');
+    expect(mockReplace).not.toHaveBeenCalled();
+
+    replaceStateSpy.mockRestore();
+    jest.useRealTimers();
+  });
+
+  test('passes viewState as controlled prop on move', () => {
+    render(<Map />);
+
+    act(() => {
+      if (typeof lastMapProps.onMove === 'function') {
+        (lastMapProps.onMove as (evt: { viewState: { longitude: number; latitude: number; zoom: number } }) => void)({
+          viewState: { longitude: 37.6, latitude: 55.7, zoom: 12 },
+        });
+      }
+    });
+
+    // After onMove, the Map mock should receive updated viewState props
+    // proving the component is in controlled mode (map can pan)
+    expect(lastMapProps.longitude).toBe(37.6);
+    expect(lastMapProps.latitude).toBe(55.7);
+    expect(lastMapProps.zoom).toBe(12);
+  });
+
+  test('renders Sidebar when initialId is provided', () => {
+    const { container } = render(<Map initialId="abc123" />);
+
+    expect(container.textContent).toContain('Загрузка');
+  });
+
+  test('does not render Sidebar without initialId', () => {
+    const { container } = render(<Map />);
+
+    expect(container.textContent).not.toContain('Загрузка');
+  });
+
+  test('never calls router.replace from any handler', () => {
+    jest.useFakeTimers();
+
+    render(<Map />);
+
+    act(() => {
+      if (typeof lastMapProps.onLoad === 'function') {
+        (lastMapProps.onLoad as () => void)();
+      }
+    });
+
+    act(() => {
+      if (typeof lastMapProps.onMoveEnd === 'function') {
+        (lastMapProps.onMoveEnd as (evt: { viewState: { longitude: number; latitude: number; zoom: number } }) => void)({
+          viewState: { longitude: 37.6, latitude: 55.7, zoom: 12 },
+        });
+      }
+    });
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    act(() => {
+      if (typeof lastMapProps.onMove === 'function') {
+        (lastMapProps.onMove as (evt: { viewState: { longitude: number; latitude: number; zoom: number } }) => void)({
+          viewState: { longitude: 37.6, latitude: 55.7, zoom: 12 },
+        });
+      }
+    });
+
+    expect(mockReplace).not.toHaveBeenCalled();
+
+    jest.useRealTimers();
+  });
 });

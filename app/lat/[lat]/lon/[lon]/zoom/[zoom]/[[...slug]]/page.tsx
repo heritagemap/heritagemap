@@ -1,5 +1,4 @@
 import Map from '@/app/components/Map';
-import Sidebar from '@/app/components/Sidebar';
 
 interface MapPageProps {
   params: Promise<{ lat: string; lon: string; zoom: string; slug?: string[] }>;
@@ -8,10 +7,5 @@ interface MapPageProps {
 export default async function MapPage({ params }: MapPageProps) {
   const { slug } = await params;
 
-  return (
-    <>
-      <Map />
-      {slug?.[0] && <Sidebar />}
-    </>
-  );
+  return <Map key="map-root" initialId={slug?.[0]} />;
 }

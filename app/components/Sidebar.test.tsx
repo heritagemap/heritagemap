@@ -1,30 +1,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Sidebar from './Sidebar';
-import { useParams, useRouter } from 'next/navigation';
-
-jest.mock('next/navigation', () => ({
-  useParams: jest.fn(),
-  useRouter: jest.fn(),
-}));
 
 describe('Sidebar', () => {
-  const mockReplace = jest.fn();
+  const mockClose = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useRouter as jest.Mock).mockReturnValue({ replace: mockReplace });
-    (useParams as jest.Mock).mockReturnValue({
-      lat: '55',
-      lon: '37',
-      zoom: '12',
-      slug: ['abc123'],
-    });
-  });
-
-  test('renders null when no id', () => {
-    (useParams as jest.Mock).mockReturnValue({ lat: '55', lon: '37', zoom: '12' });
-    const { container } = render(<Sidebar />);
-    expect(container.firstChild).toBeNull();
   });
 
   test('fetches and renders monument info', async () => {
@@ -49,7 +30,7 @@ describe('Sidebar', () => {
       } as Response),
     );
 
-    render(<Sidebar />);
+    render(<Sidebar id="abc123" onClose={mockClose} />);
 
     await waitFor(() => {
       expect(screen.getByText('Test Monument')).toBeInTheDocument();
@@ -61,7 +42,7 @@ describe('Sidebar', () => {
     expect(screen.getByText('Статья в Википедии')).toBeInTheDocument();
   });
 
-  test('close button replaces route without id', async () => {
+  test('calls onClose when close button clicked', async () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
@@ -69,13 +50,13 @@ describe('Sidebar', () => {
       } as Response),
     );
 
-    render(<Sidebar />);
+    render(<Sidebar id="abc123" onClose={mockClose} />);
 
     await waitFor(() => {
       expect(screen.getByRole('button')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button'));
-    expect(mockReplace).toHaveBeenCalledWith('/lat/55/lon/37/zoom/12');
+    expect(mockClose).toHaveBeenCalled();
   });
 });
