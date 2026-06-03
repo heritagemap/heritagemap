@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import AlertProvider from '@/app/components/AlertProvider';
 import { Analytics } from '@vercel/analytics/next';
+import YandexMetrika from '@/app/components/YandexMetrika';
 
 export const metadata: Metadata = {
   title: { default: 'HeritageMap', template: '%s | HeritageMap' },
@@ -25,6 +26,9 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/manifest.json',
+  other: {
+    'yandex-verification': 'e276bc80f69b5ca8',
+  },
 };
 
 export const viewport: Viewport = {
@@ -42,6 +46,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <AlertProvider>{children}</AlertProvider>
         <Analytics />
+        <YandexMetrika />
       </body>
     </html>
   );
