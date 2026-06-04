@@ -5,6 +5,7 @@ import AlertProvider from '@/app/components/AlertProvider';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import YandexMetrika from '@/app/components/YandexMetrika';
+import JsonLd from '@/app/components/JsonLd';
 import { BASE_URL } from '@/app/lib/constants/map';
 
 export const metadata: Metadata = {
@@ -12,8 +13,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: BASE_URL,
   },
+  robots: { index: true, follow: true },
   title: { default: 'HeritageMap', template: '%s | HeritageMap' },
   description: 'Интерактивная карта объектов культурного наследия России',
+  applicationName: 'HeritageMap',
+  category: 'Карта',
+  creator: 'HeritageMap',
+  publisher: 'HeritageMap',
   openGraph: {
     title: 'Карта культурного наследия России',
     description: 'Интерактивная карта объектов культурного наследия России',
@@ -53,6 +59,32 @@ export const metadata: Metadata = {
   },
 };
 
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'HeritageMap',
+  url: BASE_URL,
+  description: 'Интерактивная карта объектов культурного наследия России',
+  inLanguage: 'ru-RU',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${BASE_URL}/search?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'HeritageMap',
+  url: BASE_URL,
+  logo: `${BASE_URL}/heritagemap.png`,
+  description: 'Интерактивная карта объектов культурного наследия России',
+};
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -73,6 +105,8 @@ export default function RootLayout({
         >
           Пропустить навигацию
         </a>
+        <JsonLd data={websiteJsonLd} />
+        <JsonLd data={organizationJsonLd} />
         <AlertProvider>{children}</AlertProvider>
         <SpeedInsights />
         <Analytics />

@@ -1,20 +1,15 @@
 import { cache } from 'react';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { RESOURCE, BASE_URL } from '@/app/lib/constants/map';
+import { RESOURCE, BASE_URL, DEFAULT_LAT, DEFAULT_LON } from '@/app/lib/constants/map';
+import type { InfoInterface } from '@/app/lib/interfaces/FullInfo';
+import MonumentPage from '@/app/components/MonumentPage';
+import JsonLd from '@/app/components/JsonLd';
 import { getLogger } from '@/app/lib/logger';
 
 const logger = getLogger('MonumentPage');
 
-interface MonumentInfo {
-  lat?: number | string;
-  long?: number | string;
-  name?: string;
-}
-
-const getMonumentInfo = cache(async (id: string): Promise<MonumentInfo> => {
-  logger.debug({ id }, 'Серверный запрос к API');
-
+const getMonumentInfo = cache(async (id: string): Promise<InfoInterface> => {
   const response = await fetch(`${RESOURCE}?id=${id}`, {
     next: { revalidate: 86400 },
   });
@@ -36,17 +31,30 @@ export async function generateMetadata({ params }: MonumentPageProps): Promise<M
 
   try {
     const info = await getMonumentInfo(id);
+    const description = info.description
+      ? info.description.replace(/<(.*?)>/g, '').slice(0, 160)
+      : info.address
+        ? `Адрес: ${info.address}`
+        : 'Объект культурного наследия России';
+
     return {
       title: info.name || 'Объект культурного наследия',
+      description,
       openGraph: {
         title: info.name || 'Объект культурного наследия',
-        description: info.name ? `Объект культурного наследия: ${info.name}` : undefined,
+        description,
         url: `${BASE_URL}/${id}`,
-        type: 'article',
+        images: info.image
+          ? [{ url: `/_api/ru_monument_image?image=${info.image}` }]
+          : [{ url: '/heritagemap.png', width: 512, height: 512 }],
       },
       twitter: {
-        card: 'summary',
+        card: info.image ? 'summary_large_image' : 'summary',
         title: info.name || 'Объект культурного наследия',
+        description,
+        images: info.image
+          ? [`/_api/ru_monument_image?image=${info.image}`]
+          : ['/heritagemap.png'],
       },
     };
   } catch {
@@ -57,14 +65,34 @@ export async function generateMetadata({ params }: MonumentPageProps): Promise<M
   }
 }
 
-export default async function MonumentPage({ params }: MonumentPageProps) {
+function buildBreadcrumbJsonLd(id: string, info: InfoInterface) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'HeritageMap',
+        item: BASE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: info.name || id,
+        item: `${BASE_URL}/${id}`,
+      },
+    ],
+  };
+}
+
+export default async function MonumentPageRoute({ params }: MonumentPageProps) {
   const { id } = await params;
 
-  let info: MonumentInfo;
+  let info: InfoInterface;
 
   try {
     info = await getMonumentInfo(id);
-    logger.info({ id, name: info.name, lat: info.lat, long: info.long }, 'Памятник загружен');
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
     logger.error({ id, err: error }, 'Ошибка загрузки памятника');
@@ -72,10 +100,17 @@ export default async function MonumentPage({ params }: MonumentPageProps) {
   }
 
   if (!info?.lat || !info?.long) {
-    logger.warn({ id, lat: info.lat, long: info.long }, 'Памятник без координат');
-    redirect(`/lat/55.7522/lon/37.6155/zoom/12`);
+    info = {
+      ...info,
+      lat: DEFAULT_LAT,
+      long: DEFAULT_LON,
+    };
   }
 
-  logger.info({ id, lat: info.lat, long: info.long }, 'Редирект на карту');
-  redirect(`/lat/${info.lat}/lon/${info.long}/zoom/12/${id}`);
+  return (
+    <>
+      <JsonLd data={buildBreadcrumbJsonLd(id, info)} />
+      <MonumentPage info={info} />
+    </>
+  );
 }
