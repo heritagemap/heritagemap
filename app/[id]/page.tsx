@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { RESOURCE } from '@/app/lib/constants/map';
+import { RESOURCE, BASE_URL } from '@/app/lib/constants/map';
 import { getLogger } from '@/app/lib/logger';
 
 const logger = getLogger('MonumentPage');
@@ -15,7 +15,9 @@ interface MonumentInfo {
 const getMonumentInfo = cache(async (id: string): Promise<MonumentInfo> => {
   logger.debug({ id }, 'Серверный запрос к API');
 
-  const response = await fetch(`${RESOURCE}?id=${id}`);
+  const response = await fetch(`${RESOURCE}?id=${id}`, {
+    next: { revalidate: 86400 },
+  });
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
@@ -36,6 +38,16 @@ export async function generateMetadata({ params }: MonumentPageProps): Promise<M
     const info = await getMonumentInfo(id);
     return {
       title: info.name || 'Объект культурного наследия',
+      openGraph: {
+        title: info.name || 'Объект культурного наследия',
+        description: info.name ? `Объект культурного наследия: ${info.name}` : undefined,
+        url: `${BASE_URL}/${id}`,
+        type: 'article',
+      },
+      twitter: {
+        card: 'summary',
+        title: info.name || 'Объект культурного наследия',
+      },
     };
   } catch {
     logger.warn({ id }, 'Не удалось получить метаданные памятника');

@@ -20,7 +20,8 @@ function MarkerButton({ item, isActive, onClick }: MarkerButtonProps) {
     <button
       type="button"
       data-testid="marker"
-      className="bg-transparent border-none outline-none p-0 cursor-pointer"
+      aria-label={`Памятник: ${item.name}`}
+      className="bg-transparent border-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 p-0 cursor-pointer"
       onClick={handleMarkerClick}
     >
       <Point isActive={isActive} />

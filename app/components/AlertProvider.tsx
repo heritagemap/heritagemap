@@ -48,6 +48,7 @@ export default function AlertProvider({ children }: { children: ReactNode }) {
         {alerts.map((alert) => (
           <div
             key={alert.id}
+            role="alert"
             className={`px-4 py-2 rounded shadow text-white text-sm ${
               alert.type === 'error' ? 'bg-red-600' : 'bg-[#6c2c04]'
             }`}

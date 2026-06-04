@@ -17,7 +17,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+    <main className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
       <h2 className="text-xl font-bold mb-4">Что-то пошло не так</h2>
       <button
         type="button"
@@ -26,6 +26,6 @@ export default function Error({
       >
         Попробовать снова
       </button>
-    </div>
+    </main>
   );
 }

@@ -2,16 +2,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
   color: #fff;
   background: #6c2c04;
-  border-radius: 20px;
+  border-radius: 22px;
   border: none;
   text-align: center;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
-  outline: none;
+}
+
+.cluster:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 
 .cluster:hover {

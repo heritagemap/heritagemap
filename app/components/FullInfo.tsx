@@ -96,9 +96,10 @@ export default function FullInfo({ image }: FullInfoProps) {
         <>
           <Image
             src={file.urls.file}
-            alt={file.name || 'description'}
+            alt={file.name || 'Фотография объекта культурного наследия'}
             width={320}
             height={240}
+            sizes="(max-width: 360px) 320px, 320px"
           />
 
           <div className="text-xs text-[#aaa] mt-2 space-x-1">

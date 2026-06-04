@@ -1,12 +1,33 @@
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
+import type { Viewport } from 'next';
 import './globals.css';
 import AlertProvider from '@/app/components/AlertProvider';
 import { Analytics } from '@vercel/analytics/next';
 import YandexMetrika from '@/app/components/YandexMetrika';
+import { BASE_URL } from '@/app/lib/constants/map';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
+  alternates: {
+    canonical: BASE_URL,
+  },
   title: { default: 'HeritageMap', template: '%s | HeritageMap' },
   description: 'Интерактивная карта объектов культурного наследия России',
+  openGraph: {
+    title: 'Карта культурного наследия России',
+    description: 'Интерактивная карта объектов культурного наследия России',
+    url: BASE_URL,
+    siteName: 'HeritageMap',
+    locale: 'ru_RU',
+    type: 'website',
+    images: [{ url: '/heritagemap.png', width: 512, height: 512 }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Карта культурного наследия России',
+    description: 'Интерактивная карта объектов культурного наследия России',
+    images: ['/heritagemap.png'],
+  },
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
@@ -34,6 +55,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#6c2c04',
 };
 
 export default function RootLayout({
@@ -43,7 +65,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
+      <head>
+        <link rel="preconnect" href="https://api.mapbox.com" />
+        <link rel="preconnect" href="https://upload.wikimedia.org" />
+      </head>
       <body className="min-h-full flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[10002] focus:bg-white focus:px-4 focus:py-2 focus:rounded"
+        >
+          Пропустить навигацию
+        </a>
         <AlertProvider>{children}</AlertProvider>
         <Analytics />
         <YandexMetrika />

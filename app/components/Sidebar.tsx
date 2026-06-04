@@ -85,7 +85,7 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
   const protection = info?.protection ? getProtection(info.protection) : '';
 
   return (
-    <section className="fixed top-0 bottom-0 left-0 z-10 w-full max-w-[360px] p-4 bg-white shadow-md box-border overflow-auto text-sm leading-[18px]">
+    <aside className="fixed top-0 bottom-0 left-0 z-10 w-full max-w-[360px] p-4 bg-white shadow-md box-border overflow-auto text-sm leading-[18px]" aria-label="Информация об объекте">
       {loading && 'Загрузка... '}
 
       <div className="flex justify-between items-start mb-4 pr-10">
@@ -94,7 +94,8 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-1 right-1 w-12 h-12 bg-transparent border-0 cursor-pointer opacity-80 hover:opacity-100"
+          aria-label="Закрыть"
+          className="absolute top-1 right-1 w-12 h-12 bg-transparent border-0 cursor-pointer opacity-80 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
         >
           <Close />
         </button>
@@ -165,7 +166,7 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
             href={`https://ru.wikipedia.org/wiki/${info.wiki}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>Статья в Википедии</span>
           </a>
@@ -180,7 +181,7 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
             href={`https://sobory.ru/article/?object=${info.sobory}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>Объект на сайте sobory.ru</span>
           </a>
@@ -195,7 +196,7 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
             href={`http://temples.ru/card.php?ID=${info.temples}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>Объект в проекте «Храмы России»</span>
           </a>
@@ -210,7 +211,7 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
             href={info.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>Дополнительная информация</span>
           </a>
@@ -225,7 +226,7 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
             href={info.linkextra}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>И ещё информация</span>
           </a>
@@ -234,7 +235,7 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
 
       <div className="mt-10 text-[#aaa] text-xs">
         Информация об объектах взята из{' '}
-        <a href={source} target="_blank" rel="noopener noreferrer" className="text-[#aaa]">
+        <a href={source} target="_blank" rel="noopener noreferrer" className="text-[#aaa] py-1">
           Викигида
         </a>
         <br />
@@ -243,11 +244,11 @@ export default function Sidebar({ id, onClose }: SidebarProps) {
           href="https://creativecommons.org/licenses/by-sa/3.0/deed.ru"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#aaa]"
+          className="text-[#aaa] py-1"
         >
           CC-By-SA 3.0
         </a>
       </div>
-    </section>
+    </aside>
   );
 }

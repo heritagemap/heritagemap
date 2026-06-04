@@ -70,7 +70,7 @@ test.describe('Map Interaction Tests (Mocked API)', () => {
     await expect(page.getByText('Тестовый собор')).toBeVisible();
 
     // Click close button (Close icon inside button)
-    const closeButton = page.locator('section button').first();
+    const closeButton = page.locator('aside button').first();
     await closeButton.click();
 
     // Sidebar should disappear

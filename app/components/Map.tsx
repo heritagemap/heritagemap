@@ -359,7 +359,8 @@ export default function Map({ initialId }: { initialId?: string }) {
   }, []);
 
   return (
-    <>
+    <main id="main-content">
+      <h1 className="sr-only">Карта культурного наследия России</h1>
       <MapGL
         ref={mapRef}
         {...viewState}
@@ -398,6 +399,6 @@ export default function Map({ initialId }: { initialId?: string }) {
           onClose={handleSidebarClose}
         />
       )}
-    </>
+    </main>
   );
 }
