@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { Viewport } from 'next';
 import './globals.css';
 import AlertProvider from '@/app/components/AlertProvider';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import YandexMetrika from '@/app/components/YandexMetrika';
 import { BASE_URL } from '@/app/lib/constants/map';
@@ -73,6 +74,7 @@ export default function RootLayout({
           Пропустить навигацию
         </a>
         <AlertProvider>{children}</AlertProvider>
+        <SpeedInsights />
         <Analytics />
         <YandexMetrika />
       </body>
