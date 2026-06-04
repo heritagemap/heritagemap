@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 
 import { InfoInterface } from '@/app/lib/interfaces/FullInfo';
 import getStatus from '@/app/lib/utils/getStatus';
 import getSource, { SOURCE } from '@/app/lib/utils/getSource';
-import getRoute from '@/app/lib/utils/getRoute';
 import getProtection from '@/app/lib/utils/getProtegtion';
 import { RESOURCE } from '@/app/lib/constants/map';
+import { getLogger } from '@/app/lib/logger';
 
 import FullInfo from './FullInfo';
 import {
@@ -23,32 +22,40 @@ import {
   Templates,
 } from '@/app/components/icons';
 
-export default function Sidebar() {
+const logger = getLogger('Sidebar');
+
+interface SidebarProps {
+  id: string;
+  onClose: () => void;
+}
+
+export default function Sidebar({ id, onClose }: SidebarProps) {
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<InfoInterface | undefined>(undefined);
   const [source, setSource] = useState<string>(SOURCE);
 
-  const params = useParams();
-  const router = useRouter();
-
-  const id = params.slug?.[0];
-  const lat = params.lat as string;
-  const lon = params.lon as string;
-  const zoom = params.zoom as string;
-
-  const handleClose = () => {
-    router.replace(getRoute({ lat, lon, zoom }));
-  };
-
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchInfo = async () => {
       setLoading(true);
       setInfo(undefined);
 
       try {
-        const response = await fetch(`${RESOURCE}?id=${id}`);
+        logger.debug({ id }, 'Загрузка info');
+
+        const response = await fetch(`${RESOURCE}?id=${id}`, {
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
         const text = await response.text();
         const infoJSON: InfoInterface = JSON.parse(text);
+
+        logger.info({ id, name: infoJSON.name }, 'Info загружено');
 
         setInfo(infoJSON);
         setSource(
@@ -59,22 +66,26 @@ export default function Sidebar() {
           }),
         );
       } catch (err) {
-        console.log(err);
+        if (err instanceof Error && err.name === 'AbortError') return;
+        const error = err instanceof Error ? err : new Error(String(err));
+        logger.error({ id, err: error }, 'Ошибка загрузки info');
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) fetchInfo();
-  }, [id]);
+    fetchInfo();
 
-  if (!id) return null;
+    return () => {
+      abortController.abort();
+    };
+  }, [id]);
 
   const status = info ? getStatus(info.type, info.knid) : '';
   const protection = info?.protection ? getProtection(info.protection) : '';
 
   return (
-    <section className="fixed top-0 bottom-0 left-0 z-10 w-full max-w-[360px] p-4 bg-white shadow-md box-border overflow-auto text-sm leading-[18px]">
+    <aside className="fixed top-0 bottom-0 left-0 z-10 w-full max-w-[360px] p-4 bg-white shadow-md box-border overflow-auto text-sm leading-[18px]" aria-label="Информация об объекте">
       {loading && 'Загрузка... '}
 
       <div className="flex justify-between items-start mb-4 pr-10">
@@ -82,8 +93,9 @@ export default function Sidebar() {
 
         <button
           type="button"
-          onClick={handleClose}
-          className="absolute top-1 right-1 w-12 h-12 bg-transparent border-0 cursor-pointer opacity-80 hover:opacity-100"
+          onClick={onClose}
+          aria-label="Закрыть"
+          className="absolute top-1 right-1 w-12 h-12 bg-transparent border-0 cursor-pointer opacity-80 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
         >
           <Close />
         </button>
@@ -154,7 +166,7 @@ export default function Sidebar() {
             href={`https://ru.wikipedia.org/wiki/${info.wiki}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>Статья в Википедии</span>
           </a>
@@ -169,7 +181,7 @@ export default function Sidebar() {
             href={`https://sobory.ru/article/?object=${info.sobory}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>Объект на сайте sobory.ru</span>
           </a>
@@ -184,7 +196,7 @@ export default function Sidebar() {
             href={`http://temples.ru/card.php?ID=${info.temples}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>Объект в проекте «Храмы России»</span>
           </a>
@@ -199,7 +211,7 @@ export default function Sidebar() {
             href={info.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>Дополнительная информация</span>
           </a>
@@ -214,7 +226,7 @@ export default function Sidebar() {
             href={info.linkextra}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-3.5 opacity-60"
+            className="ml-3.5 opacity-60 py-1"
           >
             <span>И ещё информация</span>
           </a>
@@ -223,7 +235,7 @@ export default function Sidebar() {
 
       <div className="mt-10 text-[#aaa] text-xs">
         Информация об объектах взята из{' '}
-        <a href={source} target="_blank" rel="noopener noreferrer" className="text-[#aaa]">
+        <a href={source} target="_blank" rel="noopener noreferrer" className="text-[#aaa] py-1">
           Викигида
         </a>
         <br />
@@ -232,11 +244,11 @@ export default function Sidebar() {
           href="https://creativecommons.org/licenses/by-sa/3.0/deed.ru"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#aaa]"
+          className="text-[#aaa] py-1"
         >
           CC-By-SA 3.0
         </a>
       </div>
-    </section>
+    </aside>
   );
 }

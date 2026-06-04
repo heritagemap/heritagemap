@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FileInterface } from '@/app/lib/interfaces/FullInfo';
+import { getLogger } from '@/app/lib/logger';
+
+const logger = getLogger('FullInfo');
 
 const IMAGE_RESOURCE = '/_api/ru_monument_image?image=';
 
@@ -44,24 +47,45 @@ export default function FullInfo({ image }: FullInfoProps) {
   const [file, setFile] = useState<FileInterface | undefined>(undefined);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchImage = async () => {
       setLoading(true);
       setLicenses('');
       setFile(undefined);
 
       try {
-        const response = await fetch(IMAGE_RESOURCE + image);
+        logger.debug({ image }, 'Загрузка метаданных изображения');
+
+        const response = await fetch(IMAGE_RESOURCE + image, {
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
         const text = await response.text();
         const info = parseImageXml(text);
 
+        logger.info({ image, hasFile: !!info.file }, 'Метаданные изображения загружены');
+
         setLicenses(info.licenses);
         setFile(info.file);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        const error = err instanceof Error ? err : new Error(String(err));
+        logger.error({ image, err: error }, 'Ошибка загрузки метаданных изображения');
       } finally {
         setLoading(false);
       }
     };
 
     fetchImage();
+
+    return () => {
+      abortController.abort();
+    };
   }, [image]);
 
   return (
@@ -72,10 +96,10 @@ export default function FullInfo({ image }: FullInfoProps) {
         <>
           <Image
             src={file.urls.file}
-            alt={file.name || 'description'}
+            alt={file.name || 'Фотография объекта культурного наследия'}
             width={320}
             height={240}
-            unoptimized
+            sizes="(max-width: 360px) 320px, 320px"
           />
 
           <div className="text-xs text-[#aaa] mt-2 space-x-1">

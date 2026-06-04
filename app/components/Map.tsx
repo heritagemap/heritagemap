@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Map as MapGL, Marker, NavigationControl, GeolocateControl, useControl } from 'react-map-gl/mapbox';
 // @ts-expect-error — no type declarations available for @mapbox/mapbox-gl-geocoder
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
@@ -15,8 +15,12 @@ import getBbox from '@/app/lib/utils/getBbox';
 import getRoute from '@/app/lib/utils/getRoute';
 import MonumentInterface from '@/app/lib/interfaces/Monument';
 import MarkerButton from './MarkerButton';
+import Sidebar from './Sidebar';
 import { useAlert } from './AlertProvider';
+import { getLogger } from '@/app/lib/logger';
 import styles from './Map.module.css';
+
+const logger = getLogger('Map');
 
 interface ViewState {
   longitude: number;
@@ -63,44 +67,38 @@ function GeocoderControl({
   return null;
 }
 
-export default function Map() {
+export default function Map({ initialId }: { initialId?: string }) {
   const params = useParams();
-  const router = useRouter();
   const alert = useAlert();
 
   const lat = Number(params.lat) || 55.7522;
   const lon = Number(params.lon) || 37.6155;
   const zoom = Number(params.zoom) || MIN_ZOOM_LEVEL;
-  const id = params.slug?.[0] as string | undefined;
 
   const [viewState, setViewState] = useState<ViewState>({
     longitude: lon,
     latitude: lat,
     zoom,
   });
+  const [settledViewState, setSettledViewState] = useState<ViewState>({
+    longitude: lon,
+    latitude: lat,
+    zoom,
+  });
+  const [selectedId, setSelectedId] = useState<string | undefined>(initialId);
   const [monuments, setMonuments] = useState<MonumentInterface[]>([]);
   const [loading, setLoading] = useState(false);
 
   const mapRef = useRef<MapRef>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    const numLat = Number(lat);
-    const numLon = Number(lon);
-    setViewState({ longitude: numLon, latitude: numLat, zoom });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const moveEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('viewport', JSON.stringify(viewState));
+      localStorage.setItem('viewport', JSON.stringify(settledViewState));
     }
-  }, [viewState]);
+  }, [settledViewState]);
 
   const loadPoints = useCallback(
     async ({
@@ -129,22 +127,32 @@ export default function Map() {
       });
 
       try {
+        logger.debug({ latitude, longitude, zoom, bbox }, 'Загрузка точек');
+
         const response = await fetch(
-          PAGES_RESOURCE + bbox.map((item) => String(item).substr(0, 7)).join(),
+          PAGES_RESOURCE + bbox.map((item) => String(item).slice(0, 7)).join(),
           { signal: abortControllerRef.current.signal },
         );
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
 
         const { monuments } = await response.json();
         setMonuments(monuments || []);
 
+        logger.info({ count: monuments?.length || 0 }, 'Точки загружены');
+
         if (!monuments || monuments.length === 0) {
+          logger.warn('Достопримечательности не найдены');
           alert.show('Достопримечательности не найдены');
         }
       } catch (err: unknown) {
         if (err instanceof Error && err.name === 'AbortError') return;
 
         alert.error('Что-то пошло не так');
-        console.log(err);
+        const error = err instanceof Error ? err : new Error(String(err));
+        logger.error({ err: error }, 'Ошибка загрузки точек');
       } finally {
         setLoading(false);
       }
@@ -160,6 +168,23 @@ export default function Map() {
     [loadPoints],
   );
 
+  const replaceUrl = useCallback(
+    ({
+      latitude,
+      longitude,
+      zoom,
+      id,
+    }: {
+      latitude: number;
+      longitude: number;
+      zoom: number;
+      id?: string;
+    }) => {
+      window.history.replaceState(null, '', getRoute({ lat: latitude, lon: longitude, zoom, id }));
+    },
+    [],
+  );
+
   const handleMove = useCallback(
     (evt: { viewState: ViewState }) => {
       const { longitude, latitude, zoom } = evt.viewState;
@@ -167,10 +192,22 @@ export default function Map() {
 
       setViewState({ longitude, latitude, zoom: maxZoom });
       loadPointsWithDebounce({ latitude, longitude, zoom: maxZoom });
-
-      router.replace(getRoute({ lat: latitude, lon: longitude, zoom: maxZoom, id }));
     },
-    [id, router, loadPointsWithDebounce],
+    [loadPointsWithDebounce],
+  );
+
+  const handleMoveEnd = useCallback(
+    (evt: { viewState: ViewState }) => {
+      const { longitude, latitude, zoom } = evt.viewState;
+      const maxZoom = Math.max(MIN_ZOOM_LEVEL, Number(zoom));
+
+      if (moveEndTimerRef.current) clearTimeout(moveEndTimerRef.current);
+      moveEndTimerRef.current = setTimeout(() => {
+        setSettledViewState({ longitude, latitude, zoom: maxZoom });
+        replaceUrl({ latitude, longitude, zoom: maxZoom, id: selectedId });
+      }, 400);
+    },
+    [replaceUrl, selectedId],
   );
 
   const handleGeolocate = useCallback(
@@ -178,13 +215,17 @@ export default function Map() {
       const { longitude, latitude } = evt.coords;
       const currentZoom = viewState.zoom || MIN_ZOOM_LEVEL;
 
+      logger.info({ lat: latitude, lon: longitude }, 'Геолокация получена');
+      setViewState({ longitude, latitude, zoom: currentZoom });
+      setSettledViewState({ longitude, latitude, zoom: currentZoom });
       loadPointsWithDebounce({ latitude, longitude, zoom: currentZoom });
-      router.replace(getRoute({ lat: latitude, lon: longitude, id, zoom: currentZoom }));
+      replaceUrl({ latitude, longitude, zoom: currentZoom, id: selectedId });
     },
-    [viewState.zoom, id, router, loadPointsWithDebounce],
+    [viewState, replaceUrl, selectedId, loadPointsWithDebounce],
   );
 
   const handleMapLoad = useCallback(() => {
+    logger.info('Карта загружена');
     loadPoints({ longitude: lon, latitude: lat, zoom: viewState.zoom || MIN_ZOOM_LEVEL });
   }, [lon, lat, viewState.zoom, loadPoints]);
 
@@ -209,34 +250,60 @@ export default function Map() {
     const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
     const height = typeof window !== 'undefined' ? window.innerHeight : 768;
     const bbox = getBbox({
-      latitude: viewState.latitude,
-      longitude: viewState.longitude,
-      zoom: viewState.zoom,
+      latitude: settledViewState.latitude,
+      longitude: settledViewState.longitude,
+      zoom: settledViewState.zoom,
       width,
       height,
     });
 
-    return supercluster.getClusters(bbox as [number, number, number, number], Math.floor(viewState.zoom)) as ClusterFeature[];
-  }, [supercluster, viewState]);
+    return supercluster.getClusters(bbox as [number, number, number, number], Math.floor(settledViewState.zoom)) as ClusterFeature[];
+  }, [supercluster, settledViewState]);
+
+  const handleSidebarClose = useCallback(() => {
+    setSelectedId(undefined);
+    replaceUrl({
+      latitude: viewState.latitude,
+      longitude: viewState.longitude,
+      zoom: viewState.zoom,
+    });
+  }, [viewState, replaceUrl]);
+
+  const handleMarkerClick = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      replaceUrl({
+        latitude: viewState.latitude,
+        longitude: viewState.longitude,
+        zoom: viewState.zoom,
+        id,
+      });
+    },
+    [viewState, replaceUrl],
+  );
 
   const handleClusterClick = useCallback(
     (clusterId: number, longitude: number, latitude: number) => {
       const expansionZoom = supercluster.getClusterExpansionZoom(clusterId);
+      logger.debug({ clusterId, expansionZoom }, 'Клик по кластеру');
       setViewState({ longitude, latitude, zoom: expansionZoom });
-      router.replace(getRoute({ lat: latitude, lon: longitude, zoom: expansionZoom, id }));
+      setSettledViewState({ longitude, latitude, zoom: expansionZoom });
+      replaceUrl({ latitude, longitude, zoom: expansionZoom, id: selectedId });
     },
-    [supercluster, id, router],
+    [supercluster, replaceUrl, selectedId],
   );
 
   const handleGeocoderResult = useCallback(
     (result: unknown) => {
       const [newLon, newLat] = (result as { center: [number, number] }).center;
       const maxZoom = Math.max(MIN_ZOOM_LEVEL, 12);
+      logger.info({ lat: newLat, lon: newLon }, 'Результат геокодера');
       setViewState({ longitude: newLon, latitude: newLat, zoom: maxZoom });
-      router.replace(getRoute({ lat: newLat, lon: newLon, zoom: maxZoom, id }));
+      setSettledViewState({ longitude: newLon, latitude: newLat, zoom: maxZoom });
+      replaceUrl({ latitude: newLat, longitude: newLon, zoom: maxZoom, id: selectedId });
       loadPointsWithDebounce({ latitude: newLat, longitude: newLon, zoom: maxZoom });
     },
-    [id, router, loadPointsWithDebounce],
+    [replaceUrl, selectedId, loadPointsWithDebounce],
   );
 
   const markers = useMemo(() => {
@@ -277,49 +344,61 @@ export default function Map() {
           longitude={longitude}
           latitude={latitude}
         >
-          <MarkerButton item={monument} />
+          <MarkerButton item={monument} isActive={selectedId === feature.properties.id} onClick={handleMarkerClick} />
         </Marker>
       );
     });
-  }, [clusters, monuments, handleClusterClick]);
+  }, [clusters, monuments, handleClusterClick, selectedId, handleMarkerClick]);
 
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) abortControllerRef.current.abort();
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (moveEndTimerRef.current) clearTimeout(moveEndTimerRef.current);
     };
   }, []);
 
   return (
-    <MapGL
-      ref={mapRef}
-      {...viewState}
-      dragRotate={false}
-      pitch={0}
-      pitchWithRotate={false}
-      style={{ width: '100vw', height: '100vh' }}
-      mapStyle="mapbox://styles/mapbox/streets-v9"
-      onMove={handleMove}
-      onLoad={handleMapLoad}
-      mapboxAccessToken={ACCESS_TOKEN}
-    >
-      <GeocoderControl accessToken={ACCESS_TOKEN} onResult={handleGeocoderResult} />
+    <main id="main-content">
+      <h1 className="sr-only">Карта культурного наследия России</h1>
+      <MapGL
+        ref={mapRef}
+        {...viewState}
+        dragRotate={false}
+        pitch={0}
+        pitchWithRotate={false}
+        style={{ width: '100vw', height: '100vh' }}
+        mapStyle="mapbox://styles/mapbox/streets-v9"
+        onMove={handleMove}
+        onMoveEnd={handleMoveEnd}
+        onLoad={handleMapLoad}
+        mapboxAccessToken={ACCESS_TOKEN}
+      >
+        <GeocoderControl accessToken={ACCESS_TOKEN} onResult={handleGeocoderResult} />
 
-      <GeolocateControl
-        positionOptions={{ enableHighAccuracy: true }}
-        trackUserLocation
-        onGeolocate={handleGeolocate}
-      />
+        <GeolocateControl
+          positionOptions={{ enableHighAccuracy: true }}
+          trackUserLocation
+          onGeolocate={handleGeolocate}
+        />
 
-      <NavigationControl position="top-right" showZoom />
+        <NavigationControl position="top-right" showZoom />
 
-      {markers}
+        {markers}
 
-      {loading && (
-        <div className="absolute top-1 left-1 z-[10000] text-[13px] bg-white rounded px-1.5 py-0.5">
-          Поиск объектов...
-        </div>
+        {loading && (
+          <div className="absolute top-1 left-1 z-[10000] text-[13px] bg-white rounded px-1.5 py-0.5">
+            Поиск объектов...
+          </div>
+        )}
+      </MapGL>
+
+      {selectedId && (
+        <Sidebar
+          id={selectedId}
+          onClose={handleSidebarClose}
+        />
       )}
-    </MapGL>
+    </main>
   );
 }

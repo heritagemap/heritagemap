@@ -4,7 +4,7 @@ import FullInfo from './FullInfo';
 describe('FullInfo', () => {
   test('renders loading state initially', () => {
     global.fetch = jest.fn(() =>
-      Promise.resolve({ text: () => Promise.resolve('<response></response>') } as Response),
+      Promise.resolve({ ok: true, text: () => Promise.resolve('<response></response>') } as Response),
     );
 
     render(<FullInfo image="Test.jpg" />);
@@ -14,6 +14,7 @@ describe('FullInfo', () => {
   test('renders image and metadata after fetch', async () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
+        ok: true,
         text: () =>
           Promise.resolve(`
             <response>
