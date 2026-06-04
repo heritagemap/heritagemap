@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Страница не найдена',
+  robots: { index: false, follow: true },
+};
+
 export default function NotFound() {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
