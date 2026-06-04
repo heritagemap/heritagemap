@@ -67,10 +67,8 @@ async headers() {
                   key: 'Content-Security-Policy',
                   value: [
                     "default-src 'self'",
-                    "script-src 'self' 'unsafe-eval' https://*.mapbox.com https://mc.yandex.ru https://www.googletagmanager.com https://www.vercel-insights.com",
-                    "script-src-elem 'self' 'unsafe-eval' https://*.mapbox.com https://mc.yandex.ru https://www.googletagmanager.com https://www.vercel-insights.com",
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.mapbox.com https://mc.yandex.ru https://www.googletagmanager.com https://www.vercel-insights.com",
                     "style-src 'self' 'unsafe-inline' https://*.mapbox.com",
-                    "style-src-elem 'self' 'unsafe-inline' https://*.mapbox.com",
                     "img-src 'self' data: blob: https://*.mapbox.com https://upload.wikimedia.org https://mc.yandex.ru",
                     "connect-src 'self' https://*.mapbox.com https://api.mapbox.com https://events.mapbox.com https://*.toolforge.org https://mc.yandex.ru https://www.google-analytics.com",
                     "worker-src blob:",
