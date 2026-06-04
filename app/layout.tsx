@@ -65,10 +65,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <head>
-        <link rel="preconnect" href="https://api.mapbox.com" />
-        <link rel="preconnect" href="https://upload.wikimedia.org" />
-      </head>
       <body className="min-h-full flex flex-col">
         <a
           href="#main-content"

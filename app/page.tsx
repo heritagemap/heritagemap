@@ -37,5 +37,5 @@ export default function Home() {
     );
   }, [router]);
 
-  return null;
+  return <div className="flex items-center justify-center min-h-screen text-sm">Загрузка...</div>;
 }
