@@ -1,10 +1,12 @@
 import type { MetadataRoute } from 'next';
-import { PAGES_RESOURCE, BASE_URL } from '@/app/lib/constants/map';
+import { BASE_URL } from '@/app/lib/constants/map';
 import shortLinks from '@/app/lib/constants/shortLinks';
 import getBbox from '@/app/lib/utils/getBbox';
 
+const HERITAGE_API = 'https://heritage.toolforge.org/api/api.php';
+const HERITAGE_API_PARAMS = 'action=search&format=json&limit=5000&srcountry=ru&props=id';
 const CITY_BBOX_SIZE = 40000;
-const FETCH_TIMEOUT_MS = 10000;
+const FETCH_TIMEOUT_MS = 15000;
 
 interface MonumentApiResponse {
   monuments?: { id: string }[];
@@ -20,12 +22,13 @@ async function fetchMonuments(lat: number, lon: number, zoom: number): Promise<M
   });
 
   const bboxStr = bbox.map((c) => c.toFixed(7)).join(',');
+  const url = `${HERITAGE_API}?${HERITAGE_API_PARAMS}&bbox=${bboxStr}`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${PAGES_RESOURCE}${bboxStr}`, {
+    const response = await fetch(url, {
       signal: controller.signal,
       next: { revalidate: 86400 },
     });
