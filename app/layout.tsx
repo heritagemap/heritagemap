@@ -10,9 +10,6 @@ import { BASE_URL } from '@/app/lib/constants/map';
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
-  alternates: {
-    canonical: BASE_URL,
-  },
   robots: { index: true, follow: true },
   title: { default: 'HeritageMap', template: '%s | HeritageMap' },
   description: 'Интерактивная карта объектов культурного наследия России',

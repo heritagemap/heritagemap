@@ -8,7 +8,7 @@ import { getLogger } from '@/app/lib/logger';
 const logger = getLogger('MapPage');
 
 const getMonumentInfo = cache(async (id: string) => {
-  const response = await fetch(`${RESOURCE}?id=${id}`, {
+  const response = await fetch(`${BASE_URL}${RESOURCE}?id=${id}`, {
     next: { revalidate: 86400 },
   });
 
@@ -41,6 +41,9 @@ export async function generateMetadata({ params }: MapPageProps): Promise<Metada
       return {
         title,
         description,
+        alternates: {
+          canonical: `${BASE_URL}/${monumentId}`,
+        },
         openGraph: {
           title,
           description,
@@ -66,6 +69,9 @@ export async function generateMetadata({ params }: MapPageProps): Promise<Metada
   return {
     title: `Карта культурного наследия (${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)})`,
     description: `Объекты культурного наследия в районе координат ${Number(lat).toFixed(2)}, ${Number(lon).toFixed(2)}. Зум: ${zoom}x.`,
+    alternates: {
+      canonical: `${BASE_URL}/lat/${lat}/lon/${lon}/zoom/${zoom}`,
+    },
     openGraph: {
       title: 'Карта культурного наследия России',
       description: 'Интерактивная карта объектов культурного наследия России',

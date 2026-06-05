@@ -10,7 +10,7 @@ import { getLogger } from '@/app/lib/logger';
 const logger = getLogger('MonumentPage');
 
 const getMonumentInfo = cache(async (id: string): Promise<InfoInterface> => {
-  const response = await fetch(`${RESOURCE}?id=${id}`, {
+  const response = await fetch(`${BASE_URL}${RESOURCE}?id=${id}`, {
     next: { revalidate: 86400 },
   });
 
@@ -40,6 +40,9 @@ export async function generateMetadata({ params }: MonumentPageProps): Promise<M
     return {
       title: info.name || 'Объект культурного наследия',
       description,
+      alternates: {
+        canonical: `${BASE_URL}/${id}`,
+      },
       openGraph: {
         title: info.name || 'Объект культурного наследия',
         description,
@@ -61,6 +64,7 @@ export async function generateMetadata({ params }: MonumentPageProps): Promise<M
     logger.warn({ id }, 'Не удалось получить метаданные памятника');
     return {
       title: 'Объект не найден',
+      robots: { index: false },
     };
   }
 }
